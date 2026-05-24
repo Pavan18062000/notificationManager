@@ -1,0 +1,134 @@
+﻿CENTRALIZED NOTIFICATION PLATFORM - END TO END FLOW (OPEN API + RABBITMQ)
+======================================================================
+
+1) EXTERNAL CLIENT -> OPEN API
+------------------------------
+Client App
+  |
+  | POST /open-api/v1/notifications/send
+  | Header: x-api-key
+  | Body: countryCode, eventCode, channel, recipient, subject/body, templateData
+  v
+OpenNotificationController
+  v
+OpenApiAuthService
+  - validate x-api-key
+  - find project by api_key_hash
+  - reject if missing/invalid/inactive
+
+
+2) REQUEST VALIDATION + ROUTE RESOLUTION
+----------------------------------------
+OpenNotificationService
+  |
+  | validate channel fields by channel type
+  | validate country exists and active
+  | validate event exists
+  | validate channel exists and active
+  |
+  | resolve notification_route with fallback priority:
+  |   A) project + country + channel + event
+  |   B) project + country + channel + event=NULL
+  |   C) project + country=NULL + channel + event
+  |   D) project + country=NULL + channel + event=NULL
+  |
+  | apply redis rate limit (project+channel)
+  | apply idempotency (project + idempotency-key)
+  | render template placeholders {{key}}
+  v
+Selected Route (provider + credentials/config)
+
+
+3) DATABASE LOGGING (BEFORE PUBLISH)
+------------------------------------
+OpenNotificationService
+  |
+  | insert notification_requests:
+  |   request_id, project_id, country_id, event_type_id, payload, status=ACCEPTED
+  |
+  | insert notification_logs:
+  |   request_id(FK), project_id, country_id, channel_id, provider_id,
+  |   recipient, retry_count=0, status=ACCEPTED
+  v
+DB committed
+
+
+4) RABBITMQ PUBLISH
+-------------------
+OpenNotificationService.publish(...)
+  |
+  | exchange: notification.exchange
+  | routing key: {projectCode}.{countryCode}.{channel}
+  | payload includes:
+  |   requestId, notificationLogId, projectCode, countryCode,
+  |   eventCode, channel, recipient, subject, body,
+  |   providerId, providerType, providerApiKey, fromEmail, senderId, routeId
+  v
+RabbitMQ Exchange
+  |
+  +--> notification.sms.queue
+  +--> notification.email.queue
+  +--> notification.whatsapp.queue
+  +--> notification.push.queue
+
+
+5) CHANNEL CONSUMERS
+--------------------
+NotificationRabbitConsumers
+  |
+  +--> smsNotificationConsumer(queue: notification.sms.queue)
+  +--> emailNotificationConsumer(queue: notification.email.queue)
+  +--> whatsappNotificationConsumer(queue: notification.whatsapp.queue)
+  +--> pushNotificationConsumer(queue: notification.push.queue)
+  |
+  | common process(payload, channel):
+  |   - load notification_log by notificationLogId
+  |   - set log status = PROCESSING
+  |
+  |   EMAIL + SENDGRID path:
+  |   - read providerApiKey + fromEmail from payload
+  |   - call SendgridEmailService.send(apiKey, fromEmail, to, subject, body)
+  |
+  |   non-SENDGRID or other channels:
+  |   - current implementation keeps simulated success path
+  |
+  | success:
+  |   - log status = SENT
+  |   - request status = SENT
+  |
+  | failure:
+  |   - log status = FAILED
+  |   - request status = FAILED
+  v
+Final delivery status stored
+
+
+6) ADMIN/UI OBSERVABILITY
+-------------------------
+Frontend modules read via API:
+  - master data (projects/countries/channels/providers/event-types)
+  - notification routes
+  - templates
+  - users
+  - notification test page (calls open-api send endpoint)
+
+Monitoring can display:
+  - accepted / processing / sent / failed counts
+  - requestId tracking
+  - provider + channel level outcomes
+
+
+7) STATUS STATE MACHINE
+-----------------------
+ACCEPTED -> PROCESSING -> SENT
+                     \-> FAILED
+
+
+8) KEY DESIGN PRINCIPLES
+------------------------
+- External clients never pass projectCode in payload; project is derived from x-api-key.
+- Routing/provider selection is server-side from notification_routes.
+- API returns fast after enqueue (async delivery model).
+- RabbitMQ decouples API latency from provider latency.
+- Redis supports rate-limit + idempotency.
+- DB keeps audit trail for each accepted request.

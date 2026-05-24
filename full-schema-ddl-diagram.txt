@@ -1,0 +1,615 @@
+ZAPS COMMUNICATION - FULL TABLE DDL + RELATIONSHIP DIAGRAM
+========================================================
+
+TABLES (27)
+- channels
+- client_services
+- clients
+- countries
+- email_logs
+- email_templates
+- event_types
+- flyway_schema_history
+- message_logs
+- message_templates
+- notification_logs
+- notification_requests
+- notification_routes
+- project_channel_config
+- project_countries
+- project_provider_config
+- project_services
+- projects
+- provider_attempts
+- provider_channels
+- provider_countries
+- providers
+- services
+- sms_logs
+- sms_templates
+- templates
+- users
+
+------------------------------------------------------------
+TABLE: channels
+------------------------------------------------------------
+CREATE TABLE `channels` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `active` bit(1) NOT NULL,
+  `code` enum('EMAIL','PUSH','SMS','WHATSAPP') NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_channel_code` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: client_services
+------------------------------------------------------------
+CREATE TABLE `client_services` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) NOT NULL,
+  `description` varchar(1000) DEFAULT NULL,
+  `is_enabled` bit(1) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `client_id` bigint NOT NULL,
+  `service_id` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UKa2qmhgjke0y4k8f2hcwtrb11r` (`client_id`,`service_id`),
+  KEY `FK6pfi4r82qbss2j0ybylgvvng9` (`service_id`),
+  CONSTRAINT `FK1chgp4jf7ugynj00i45vn63qd` FOREIGN KEY (`client_id`) REFERENCES `clients` (`id`),
+  CONSTRAINT `FK6pfi4r82qbss2j0ybylgvvng9` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: clients
+------------------------------------------------------------
+CREATE TABLE `clients` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `api_key_hash` varchar(128) NOT NULL,
+  `client_code` varchar(255) NOT NULL,
+  `client_name` varchar(255) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `description` varchar(1000) DEFAULT NULL,
+  `is_active` bit(1) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UK59ust0ah2ojukr079kddthcrm` (`client_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: countries
+------------------------------------------------------------
+CREATE TABLE `countries` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `country_code` varchar(10) NOT NULL,
+  `country_name` varchar(100) NOT NULL,
+  `is_active` bit(1) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_countries_country_code` (`country_code`),
+  UNIQUE KEY `uk_country_code` (`country_code`),
+  KEY `idx_country_code` (`country_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: email_logs
+------------------------------------------------------------
+CREATE TABLE `email_logs` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `bcc_recipients` varchar(2000) DEFAULT NULL,
+  `body` longtext NOT NULL,
+  `body_type` enum('HTML','TEXT') NOT NULL,
+  `cc_recipients` varchar(2000) DEFAULT NULL,
+  `client_code` varchar(255) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `error_message` varchar(4000) DEFAULT NULL,
+  `kafka_topic` varchar(255) DEFAULT NULL,
+  `recipient_email` varchar(255) NOT NULL,
+  `request_payload` longtext,
+  `sent_at` datetime(6) DEFAULT NULL,
+  `status` enum('FAILED','PENDING','SENT') NOT NULL,
+  `subject` varchar(255) NOT NULL,
+  `template_code` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: email_templates
+------------------------------------------------------------
+CREATE TABLE `email_templates` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `body_html` longtext NOT NULL,
+  `client_code` varchar(255) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `is_active` bit(1) NOT NULL,
+  `subject` varchar(255) NOT NULL,
+  `template_code` varchar(255) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UKiu8651o8bry1xre0ewfkkc9nv` (`client_code`,`template_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: event_types
+------------------------------------------------------------
+CREATE TABLE `event_types` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `event_code` varchar(80) NOT NULL,
+  `event_name` varchar(120) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_event_code` (`event_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: flyway_schema_history
+------------------------------------------------------------
+CREATE TABLE `flyway_schema_history` (
+  `installed_rank` int NOT NULL,
+  `version` varchar(50) DEFAULT NULL,
+  `description` varchar(200) NOT NULL,
+  `type` varchar(20) NOT NULL,
+  `script` varchar(1000) NOT NULL,
+  `checksum` int DEFAULT NULL,
+  `installed_by` varchar(100) NOT NULL,
+  `installed_on` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `execution_time` int NOT NULL,
+  `success` tinyint(1) NOT NULL,
+  PRIMARY KEY (`installed_rank`),
+  KEY `flyway_schema_history_s_idx` (`success`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: message_logs
+------------------------------------------------------------
+CREATE TABLE `message_logs` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `channel` enum('EMAIL','SMS','PUSH','WHATSAPP') NOT NULL,
+  `project_code` varchar(255) NOT NULL,
+  `template_code` varchar(255) DEFAULT NULL,
+  `destination` varchar(255) NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `payload` longtext NOT NULL,
+  `status` enum('PENDING','PROCESSING','SENT','FAILED','FAILED_RETRYABLE') NOT NULL,
+  `error_message` varchar(4000) DEFAULT NULL,
+  `kafka_topic` varchar(255) DEFAULT NULL,
+  `request_payload` longtext,
+  `created_at` datetime(6) NOT NULL,
+  `sent_at` datetime(6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_message_logs_channel_project_status` (`channel`,`project_code`,`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: message_templates
+------------------------------------------------------------
+CREATE TABLE `message_templates` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `channel` enum('EMAIL','SMS','PUSH','WHATSAPP') NOT NULL,
+  `project_code` varchar(255) NOT NULL,
+  `template_code` varchar(255) NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `payload` longtext NOT NULL,
+  `is_active` bit(1) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_message_templates_channel_project_template` (`channel`,`project_code`,`template_code`),
+  UNIQUE KEY `UK210v5n6hmbpbyq6udc991rpxg` (`channel`,`project_code`,`template_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: notification_logs
+------------------------------------------------------------
+CREATE TABLE `notification_logs` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `recipient` varchar(255) DEFAULT NULL,
+  `retry_count` int NOT NULL,
+  `status` enum('ACCEPTED','FAILED','PROCESSING','SENT') NOT NULL,
+  `channel_id` bigint NOT NULL,
+  `country_id` bigint NOT NULL,
+  `project_id` bigint NOT NULL,
+  `provider_id` bigint DEFAULT NULL,
+  `request_id` bigint NOT NULL,
+  `template_id` bigint DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_nl_req` (`request_id`),
+  KEY `FKeb8mn27pxf92pw428429gb0dt` (`channel_id`),
+  KEY `FKlefyjo4jpfqc8tiu3fitjgccm` (`country_id`),
+  KEY `FKdvt4jaot7yxv88sfdeovnvwwm` (`project_id`),
+  KEY `FKnfp1c44lcjl3dcbjk5wy1qjfv` (`provider_id`),
+  KEY `FKrooloif7h5yyt9vjvyjtsa8vh` (`template_id`),
+  CONSTRAINT `FKbu3qr5aj3ft1g651kxgqaq6cj` FOREIGN KEY (`request_id`) REFERENCES `notification_requests` (`id`),
+  CONSTRAINT `FKdvt4jaot7yxv88sfdeovnvwwm` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`),
+  CONSTRAINT `FKeb8mn27pxf92pw428429gb0dt` FOREIGN KEY (`channel_id`) REFERENCES `channels` (`id`),
+  CONSTRAINT `FKlefyjo4jpfqc8tiu3fitjgccm` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`),
+  CONSTRAINT `FKnfp1c44lcjl3dcbjk5wy1qjfv` FOREIGN KEY (`provider_id`) REFERENCES `providers` (`id`),
+  CONSTRAINT `FKrooloif7h5yyt9vjvyjtsa8vh` FOREIGN KEY (`template_id`) REFERENCES `templates` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: notification_requests
+------------------------------------------------------------
+CREATE TABLE `notification_requests` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `payload` text,
+  `request_id` varchar(255) NOT NULL,
+  `status` enum('ACCEPTED','FAILED','PROCESSING','SENT') NOT NULL,
+  `country_id` bigint NOT NULL,
+  `event_type_id` bigint NOT NULL,
+  `project_id` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_nr_request_id` (`request_id`),
+  KEY `idx_nr_lookup` (`project_id`,`country_id`,`event_type_id`),
+  KEY `FKbgcqohc1kqu7lg8om853lexj` (`country_id`),
+  KEY `FKsq0v0uhbk0jjc00g4usqljndm` (`event_type_id`),
+  CONSTRAINT `FK5sndl7e7foqemd6xike57m96p` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`),
+  CONSTRAINT `FKbgcqohc1kqu7lg8om853lexj` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`),
+  CONSTRAINT `FKsq0v0uhbk0jjc00g4usqljndm` FOREIGN KEY (`event_type_id`) REFERENCES `event_types` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: notification_routes
+------------------------------------------------------------
+CREATE TABLE `notification_routes` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `project_id` bigint NOT NULL,
+  `country_id` bigint DEFAULT NULL,
+  `channel_id` bigint NOT NULL,
+  `event_type_id` bigint DEFAULT NULL,
+  `provider_id` bigint NOT NULL,
+  `priority` int NOT NULL DEFAULT '100',
+  `enabled` bit(1) NOT NULL DEFAULT b'1',
+  `rate_limit_per_minute` int DEFAULT NULL,
+  `max_retries` int DEFAULT NULL,
+  `from_email` varchar(255) DEFAULT NULL,
+  `sender_id` varchar(255) DEFAULT NULL,
+  `provider_api_key` varchar(512) DEFAULT NULL,
+  `config_json` longtext,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_notification_routes` (`project_id`,`country_id`,`channel_id`,`event_type_id`,`provider_id`),
+  KEY `idx_notification_routes_lookup` (`project_id`,`country_id`,`channel_id`,`event_type_id`,`enabled`,`priority`),
+  KEY `FKc6rooaa6ffts5o5rvixxwhn3k` (`channel_id`),
+  KEY `FKqo4ax67c70tug8pi10cwwxepl` (`country_id`),
+  KEY `FKcfuh6qou0orp65fpda5m45ko2` (`event_type_id`),
+  KEY `FKk5jmhvwy57yoo1ckemskift1m` (`provider_id`),
+  CONSTRAINT `FKc6rooaa6ffts5o5rvixxwhn3k` FOREIGN KEY (`channel_id`) REFERENCES `channels` (`id`),
+  CONSTRAINT `FKcfuh6qou0orp65fpda5m45ko2` FOREIGN KEY (`event_type_id`) REFERENCES `event_types` (`id`),
+  CONSTRAINT `FKdwnjonby536o865w03cc2k2mp` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`),
+  CONSTRAINT `FKk5jmhvwy57yoo1ckemskift1m` FOREIGN KEY (`provider_id`) REFERENCES `providers` (`id`),
+  CONSTRAINT `FKqo4ax67c70tug8pi10cwwxepl` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: project_channel_config
+------------------------------------------------------------
+CREATE TABLE `project_channel_config` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `enabled` bit(1) NOT NULL,
+  `rate_limit` int DEFAULT NULL,
+  `retry_count` int DEFAULT NULL,
+  `channel_id` bigint NOT NULL,
+  `project_id` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_project_channel_cfg` (`project_id`,`channel_id`),
+  KEY `FK258inwbfqn7mdkpt839n8oiw8` (`channel_id`),
+  CONSTRAINT `FK258inwbfqn7mdkpt839n8oiw8` FOREIGN KEY (`channel_id`) REFERENCES `channels` (`id`),
+  CONSTRAINT `FKkot7kslg7x3w7m8tham9o9axb` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: project_countries
+------------------------------------------------------------
+CREATE TABLE `project_countries` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `project_id` bigint NOT NULL,
+  `country_id` bigint NOT NULL,
+  `is_enabled` bit(1) NOT NULL,
+  `is_default_country` bit(1) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `active` bit(1) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_project_countries_project_country` (`project_id`,`country_id`),
+  UNIQUE KEY `UK76g7g1fj2y0letslkcanl7497` (`project_id`,`country_id`),
+  UNIQUE KEY `uk_project_country` (`project_id`,`country_id`),
+  KEY `fk_project_countries_country` (`country_id`),
+  CONSTRAINT `fk_project_countries_country` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`),
+  CONSTRAINT `fk_project_countries_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: project_provider_config
+------------------------------------------------------------
+CREATE TABLE `project_provider_config` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `active` bit(1) NOT NULL,
+  `api_key` varchar(255) DEFAULT NULL,
+  `api_secret` varchar(255) DEFAULT NULL,
+  `config_json` text,
+  `from_email` varchar(255) DEFAULT NULL,
+  `priority` int NOT NULL,
+  `sender_id` varchar(255) DEFAULT NULL,
+  `channel_id` bigint NOT NULL,
+  `country_id` bigint NOT NULL,
+  `project_id` bigint NOT NULL,
+  `provider_id` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_ppc_lookup` (`project_id`,`country_id`,`channel_id`,`active`,`priority`),
+  KEY `FKe9xlnnr4wsnj3vi407qcvtlvu` (`channel_id`),
+  KEY `FKlvxuxigu3wru8i2aket5pyar0` (`country_id`),
+  KEY `FKhu2k4qlnm0p54yd08tpsnliam` (`provider_id`),
+  CONSTRAINT `FKe9xlnnr4wsnj3vi407qcvtlvu` FOREIGN KEY (`channel_id`) REFERENCES `channels` (`id`),
+  CONSTRAINT `FKhu2k4qlnm0p54yd08tpsnliam` FOREIGN KEY (`provider_id`) REFERENCES `providers` (`id`),
+  CONSTRAINT `FKib30qiagnbi0dw82kvu6sur0d` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`),
+  CONSTRAINT `FKlvxuxigu3wru8i2aket5pyar0` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: project_services
+------------------------------------------------------------
+CREATE TABLE `project_services` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `project_id` bigint NOT NULL,
+  `service_id` bigint NOT NULL,
+  `is_enabled` bit(1) NOT NULL,
+  `direct_payload_enabled` bit(1) NOT NULL,
+  `template_payload_enabled` bit(1) NOT NULL,
+  `description` varchar(1000) DEFAULT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_project_services_project_service` (`project_id`,`service_id`),
+  UNIQUE KEY `UKbtit3i7hwqwb8byj32vje55oh` (`project_id`,`service_id`),
+  KEY `fk_project_services_service` (`service_id`),
+  CONSTRAINT `fk_project_services_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`),
+  CONSTRAINT `fk_project_services_service` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: projects
+------------------------------------------------------------
+CREATE TABLE `projects` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `project_code` varchar(50) NOT NULL,
+  `project_name` varchar(120) NOT NULL,
+  `description` varchar(1000) DEFAULT NULL,
+  `api_key_hash` varchar(128) NOT NULL,
+  `is_active` bit(1) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_projects_project_code` (`project_code`),
+  UNIQUE KEY `uk_project_code` (`project_code`),
+  KEY `idx_project_code` (`project_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: provider_attempts
+------------------------------------------------------------
+CREATE TABLE `provider_attempts` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `channel` enum('EMAIL','SMS','PUSH','WHATSAPP') NOT NULL,
+  `log_id` bigint NOT NULL,
+  `provider_type` enum('SENDGRID','SMTP','INFOBIP','AWS_SES','TWILIO','MSG91','AWS_SNS','LOG') NOT NULL,
+  `priority` int NOT NULL,
+  `http_status` int NOT NULL,
+  `result_status` enum('SENT','FAILED','FAILED_RETRYABLE') NOT NULL,
+  `error_message` varchar(1000) DEFAULT NULL,
+  `created_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_provider_attempts_channel_log` (`channel`,`log_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: provider_channels
+------------------------------------------------------------
+CREATE TABLE `provider_channels` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `channel_id` bigint NOT NULL,
+  `provider_id` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_provider_channel` (`provider_id`,`channel_id`),
+  KEY `FKcufsvmbbqfd2nj4cq22n8omrl` (`channel_id`),
+  CONSTRAINT `FK9gubkjw0x7skxqg7of97piupx` FOREIGN KEY (`provider_id`) REFERENCES `providers` (`id`),
+  CONSTRAINT `FKcufsvmbbqfd2nj4cq22n8omrl` FOREIGN KEY (`channel_id`) REFERENCES `channels` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: provider_countries
+------------------------------------------------------------
+CREATE TABLE `provider_countries` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `active` bit(1) NOT NULL,
+  `country_id` bigint NOT NULL,
+  `provider_id` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_provider_country` (`provider_id`,`country_id`),
+  KEY `FKt9fsrtd3hiqs22xaqx5341r35` (`country_id`),
+  CONSTRAINT `FKk39mn9sv6c0df42vfk4p2exv8` FOREIGN KEY (`provider_id`) REFERENCES `providers` (`id`),
+  CONSTRAINT `FKt9fsrtd3hiqs22xaqx5341r35` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: providers
+------------------------------------------------------------
+CREATE TABLE `providers` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `channel` enum('EMAIL','SMS','PUSH','WHATSAPP') DEFAULT NULL,
+  `provider_type` enum('SENDGRID','SMTP','INFOBIP','AWS_SES','TWILIO','MSG91','AWS_SNS','LOG') DEFAULT NULL,
+  `country_code` varchar(2) DEFAULT NULL,
+  `priority` int NOT NULL DEFAULT '1',
+  `is_active` bit(1) NOT NULL DEFAULT b'1',
+  `encrypted_credentials` longtext,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `active` bit(1) NOT NULL,
+  `provider_code` varchar(60) NOT NULL,
+  `provider_name` varchar(120) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UKmq91449qimq8rskgrvi7fvua9` (`channel`,`provider_type`,`country_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: services
+------------------------------------------------------------
+CREATE TABLE `services` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) NOT NULL,
+  `description` varchar(1000) DEFAULT NULL,
+  `is_active` bit(1) NOT NULL,
+  `service_code` varchar(255) NOT NULL,
+  `service_name` varchar(255) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UKrm9rfu0ekvjb9y1ff8blnaf0i` (`service_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: sms_logs
+------------------------------------------------------------
+CREATE TABLE `sms_logs` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `project_code` varchar(255) NOT NULL,
+  `template_code` varchar(255) DEFAULT NULL,
+  `recipient_phone` varchar(255) NOT NULL,
+  `message` longtext NOT NULL,
+  `status` enum('PENDING','PROCESSING','SENT','FAILED','FAILED_RETRYABLE') NOT NULL,
+  `error_message` varchar(4000) DEFAULT NULL,
+  `kafka_topic` varchar(255) DEFAULT NULL,
+  `request_payload` longtext,
+  `created_at` datetime(6) NOT NULL,
+  `sent_at` datetime(6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_sms_logs_project_status` (`project_code`,`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: sms_templates
+------------------------------------------------------------
+CREATE TABLE `sms_templates` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `project_code` varchar(255) NOT NULL,
+  `template_code` varchar(255) NOT NULL,
+  `message` longtext NOT NULL,
+  `is_active` bit(1) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_sms_templates_project_template` (`project_code`,`template_code`),
+  UNIQUE KEY `UK5tlafjf4j4wvfxq6amgxioc8r` (`project_code`,`template_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: templates
+------------------------------------------------------------
+CREATE TABLE `templates` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `active` bit(1) NOT NULL,
+  `body` text NOT NULL,
+  `language` varchar(255) DEFAULT NULL,
+  `subject` varchar(255) DEFAULT NULL,
+  `template_name` varchar(255) NOT NULL,
+  `channel_id` bigint NOT NULL,
+  `country_id` bigint NOT NULL,
+  `event_type_id` bigint NOT NULL,
+  `project_id` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_tpl_lookup` (`project_id`,`country_id`,`channel_id`,`event_type_id`,`active`),
+  KEY `FK2c001wvtlk2sys35c6lq9pkiv` (`channel_id`),
+  KEY `FKewmromo8o6tfm92155e4o7wht` (`country_id`),
+  KEY `FKru4h6ohhx2dg52fvbhuwt4vqv` (`event_type_id`),
+  CONSTRAINT `FK2c001wvtlk2sys35c6lq9pkiv` FOREIGN KEY (`channel_id`) REFERENCES `channels` (`id`),
+  CONSTRAINT `FKewmromo8o6tfm92155e4o7wht` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`),
+  CONSTRAINT `FKit4dtqilniclnqyugwwrx1l5r` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`),
+  CONSTRAINT `FKru4h6ohhx2dg52fvbhuwt4vqv` FOREIGN KEY (`event_type_id`) REFERENCES `event_types` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+------------------------------------------------------------
+TABLE: users
+------------------------------------------------------------
+CREATE TABLE `users` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `project_id` bigint DEFAULT NULL,
+  `email` varchar(255) NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `role` enum('SUPER_ADMIN','PROJECT_ADMIN') NOT NULL,
+  `is_active` bit(1) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_users_email` (`email`),
+  KEY `fk_users_project` (`project_id`),
+  CONSTRAINT `fk_users_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+RELATIONSHIP DIAGRAM (FK EDGE LIST)
+===================================
+client_services.client_id -> clients.id [FK1chgp4jf7ugynj00i45vn63qd]
+client_services.service_id -> services.id [FK6pfi4r82qbss2j0ybylgvvng9]
+notification_logs.request_id -> notification_requests.id [FKbu3qr5aj3ft1g651kxgqaq6cj]
+notification_logs.project_id -> projects.id [FKdvt4jaot7yxv88sfdeovnvwwm]
+notification_logs.channel_id -> channels.id [FKeb8mn27pxf92pw428429gb0dt]
+notification_logs.country_id -> countries.id [FKlefyjo4jpfqc8tiu3fitjgccm]
+notification_logs.provider_id -> providers.id [FKnfp1c44lcjl3dcbjk5wy1qjfv]
+notification_logs.template_id -> templates.id [FKrooloif7h5yyt9vjvyjtsa8vh]
+notification_requests.project_id -> projects.id [FK5sndl7e7foqemd6xike57m96p]
+notification_requests.country_id -> countries.id [FKbgcqohc1kqu7lg8om853lexj]
+notification_requests.event_type_id -> event_types.id [FKsq0v0uhbk0jjc00g4usqljndm]
+notification_routes.channel_id -> channels.id [FKc6rooaa6ffts5o5rvixxwhn3k]
+notification_routes.event_type_id -> event_types.id [FKcfuh6qou0orp65fpda5m45ko2]
+notification_routes.project_id -> projects.id [FKdwnjonby536o865w03cc2k2mp]
+notification_routes.provider_id -> providers.id [FKk5jmhvwy57yoo1ckemskift1m]
+notification_routes.country_id -> countries.id [FKqo4ax67c70tug8pi10cwwxepl]
+project_channel_config.channel_id -> channels.id [FK258inwbfqn7mdkpt839n8oiw8]
+project_channel_config.project_id -> projects.id [FKkot7kslg7x3w7m8tham9o9axb]
+project_countries.country_id -> countries.id [fk_project_countries_country]
+project_countries.project_id -> projects.id [fk_project_countries_project]
+project_provider_config.channel_id -> channels.id [FKe9xlnnr4wsnj3vi407qcvtlvu]
+project_provider_config.provider_id -> providers.id [FKhu2k4qlnm0p54yd08tpsnliam]
+project_provider_config.project_id -> projects.id [FKib30qiagnbi0dw82kvu6sur0d]
+project_provider_config.country_id -> countries.id [FKlvxuxigu3wru8i2aket5pyar0]
+project_services.project_id -> projects.id [fk_project_services_project]
+project_services.service_id -> services.id [fk_project_services_service]
+provider_channels.provider_id -> providers.id [FK9gubkjw0x7skxqg7of97piupx]
+provider_channels.channel_id -> channels.id [FKcufsvmbbqfd2nj4cq22n8omrl]
+provider_countries.provider_id -> providers.id [FKk39mn9sv6c0df42vfk4p2exv8]
+provider_countries.country_id -> countries.id [FKt9fsrtd3hiqs22xaqx5341r35]
+templates.channel_id -> channels.id [FK2c001wvtlk2sys35c6lq9pkiv]
+templates.country_id -> countries.id [FKewmromo8o6tfm92155e4o7wht]
+templates.project_id -> projects.id [FKit4dtqilniclnqyugwwrx1l5r]
+templates.event_type_id -> event_types.id [FKru4h6ohhx2dg52fvbhuwt4vqv]
+users.project_id -> projects.id [fk_users_project]
+
+ASCII ER VIEW (HIGH LEVEL)
+===========================
+projects ----< notification_requests >---- countries
+notification_requests ----< notification_logs >---- channels
+notification_logs ---- providers
+templates ---- projects / countries / channels / event_types
+notification_routes ---- projects / countries / channels / event_types / providers
+project_countries ---- projects / countries
+project_channel_config ---- projects / channels
+project_provider_config ---- projects / countries / channels / providers
+provider_countries ---- providers / countries
+provider_channels ---- providers / channels
